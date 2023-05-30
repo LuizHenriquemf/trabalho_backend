@@ -4,29 +4,33 @@ const bcrypt = require("bcrypt");
 const { usuarios } = require("../database/prisma");
 const jwt = require("jsonwebtoken");
 const auth = require("../middleware/auth");
+const z = require("zod");
 const router = express.Router();
+
+
+const usuarioSchema = z.object({
+    nome: z.string().min(3),
+    email: z.string().email(),
+    senha: z.string().min(6),
+})
 
 router.post("/registrar", async (req, res) => {
     try {
-        const emailCadastrado = await emailPorUsuario(req.body.email)
+        const usuario = usuarioSchema.parse(req.body);
+        const emailCadastrado = await emailPorUsuario(usuario.email)
         if(emailCadastrado) return res.status(400).json({
             message: "Este email já está cadastrado!"
         })
         const hashedSenha = bcrypt.hashSync(req.body.senha, 10);
-        const usuario = {
-            nome: req.body.nome,
-            email: req.body.email,
-            senha: hashedSenha
-        }
+        usuario.senha = hashedSenha;
         const usuarioSalvo = await salvarUsuario(usuario);
         delete usuarioSalvo.senha;
         res.status(201).json({
             usuario: usuarioSalvo
         })
-    } catch(error) {
-        res.status(500).json({
-            message: "Server error",
-        })
+    } catch(err) {
+        if(err instanceof z.ZodError) return res.status(422).json({message: err.errors});
+        res.status(500).json({message: "Server error",});
     }
 });
 
