@@ -1,5 +1,5 @@
 const express = require("express");
-const { salvarUsuario, emailPorUsuario, idPorUsuario } = require("../database/usuarios");
+const { salvarUsuario, emailPorUsuario, idPorUsuario, deleteUsuario } = require("../database/usuarios");
 const bcrypt = require("bcrypt");
 const { usuarios } = require("../database/prisma");
 const jwt = require("jsonwebtoken");
@@ -14,13 +14,16 @@ const usuarioSchema = z.object({
     senha: z.string().min(6),
 })
 
+const loginSchema = z.object({
+    email: z.string().email(),
+    senha: z.string()
+})
+
 router.post("/registrar", async (req, res) => {
     try {
         const usuario = usuarioSchema.parse(req.body);
         const emailCadastrado = await emailPorUsuario(usuario.email)
-        if(emailCadastrado) return res.status(400).json({
-            message: "Este email já está cadastrado!"
-        })
+        if(emailCadastrado) return res.status(400).json({message: "error"})
         const hashedSenha = bcrypt.hashSync(req.body.senha, 10);
         usuario.senha = hashedSenha;
         const usuarioSalvo = await salvarUsuario(usuario);
@@ -35,21 +38,32 @@ router.post("/registrar", async (req, res) => {
 });
 
 router.post("/login", async (req, res) => {
-    const email = req.body.email;
-    const senha = req.body.senha;
-    const usuario =  await emailPorUsuario(email);
-    if(!usuario) return res.status(401).send();
-    const senhaUsuario = bcrypt.compareSync(senha, usuario.senha);
-    if(!senhaUsuario) return res.status(401).send();
-    const token = jwt.sign({
-        idUsuario: usuario.id,
-        nome: usuario.nome,
-    }, process.env.SECRET);
+    try {
+        const data = loginSchema.parse(req.body);
+        const usuario =  await emailPorUsuario(data.email);
+        if(!usuario) return res.status(401).send();
+        const senhaUsuario = bcrypt.compareSync(data.senha, usuario.senha);
+        if(!senhaUsuario) return res.status(401).send();
+        const token = jwt.sign({
+            idUsuario: usuario.id,
+        },  process.env.SECRET);
 
-    res.json({
-        success: true,
-        token,
-    });
+        res.json({
+            success: true,
+            token,
+        });
+    } catch (error) {
+        if(error instanceof z.ZodError){
+            return res.status(422).json({
+                message: error.errors
+            })
+        }
+        res.status(500).json({
+            message: "Server error",
+        })
+    }
+    
+    
 });
 
 router.get("/profile", auth, async (req, res) => {
@@ -58,6 +72,12 @@ router.get("/profile", auth, async (req, res) => {
         usuario,
     });
 });
+
+router.delete("/usuarios/:id", async (req, res) => {
+    const id = Number(req.params.id);
+    await deleteUsuario(id);
+    res.status(204).send();
+})
 
 
 module.exports = {

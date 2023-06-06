@@ -1,7 +1,11 @@
 const prisma = require("./prisma");
 
-const todasReceitas = () => {
-    return prisma.receitas.findMany();
+const todasReceitas = (usuarioId) => {
+    return prisma.receitas.findMany({
+        where: {
+            usuarioId
+        }
+    });
 }
 
 const receitaId = (id) => {
@@ -12,9 +16,14 @@ const receitaId = (id) => {
     })
 }
 
-const salvarReceita = (receita) => {
+const salvarReceita = (receita, usuarioId) => {
     return prisma.receitas.create({
-        data: receita
+        data: {
+            nome: receita.nome,
+            descricao: receita.descricao,
+            tempo: receita.tempo,
+            usuarioId: usuarioId
+        }
     })
 }
 

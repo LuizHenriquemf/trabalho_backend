@@ -28,8 +28,17 @@ const salvarUsuario = (usuario) => {
     });
 };
 
+const deleteUsuario = (id) => {
+    return prisma.usuarios.delete({
+        where:{
+            id: id
+        }
+    })
+}
+
 module.exports = {
     salvarUsuario,
     emailPorUsuario,
-    idPorUsuario
+    idPorUsuario,
+    deleteUsuario
 }

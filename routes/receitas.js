@@ -8,11 +8,10 @@ const receitaSchema = z.object({
     nome: z.string(),
     descricao: z.string(),
     tempo: z.string(),
-    usuarioId: z.number().min(0)
 })
 
 router.get("/receitas", auth, async (req, res) => {
-    const receitas = await todasReceitas()
+    const receitas = await todasReceitas(req.usuario.idUsuario)
     res.json({
         receitas
     });
@@ -28,14 +27,20 @@ router.get("/receitas/:id", auth, async (req, res) => {
 
 router.post("/receitas", auth, async (req, res) => {
     try {
-        const NovaReceita = receitaSchema.parse(req.body);
-        const receitaSalva = await salvarReceita(NovaReceita)
-        res.json({
+        const novaReceita = receitaSchema.parse(req.body);
+        const usuarioId = req.usuario.idUsuario;
+        const receitaSalva = await salvarReceita(novaReceita, usuarioId)
+        res.status(201).json({
             receita: receitaSalva
         })
     } catch (err) {
-        if(err instanceof z.ZodError) return res.status(422).json({message: err.errors})
-        res.status(500).json({ message: "Server error" });
+        if(err instanceof z.ZodError){
+            return res.status(422).json({
+                message: err.errors})
+        } 
+        res.status(500).json({
+            message: "Server error" 
+        });
     }
 });
 
