@@ -1,5 +1,5 @@
 const express = require("express");
-const { salvarUsuario, emailPorUsuario, idPorUsuario, deleteUsuario } = require("../database/usuarios");
+const { salvarUsuario, emailPorUsuario, idPorUsuario, deleteUsuario, alterarUsuario } = require("../database/usuarios");
 const bcrypt = require("bcrypt");
 const { usuarios } = require("../database/prisma");
 const jwt = require("jsonwebtoken");
@@ -72,6 +72,25 @@ router.get("/profile", auth, async (req, res) => {
         usuario,
     });
 });
+
+router.put("/usuarios/:id", auth, async (req, res) => {
+    try {
+        const id = Number(req.params.id);
+        const usuario = usuarioSchema.parse(req.body);
+        const usuarioAtualizado = await alterarUsuario(id, usuario);
+        res.json({
+            usuario: usuarioAtualizado
+        });
+    } catch (err) {
+        if(err instanceof z.ZodError){
+            return res.status(422).json({
+                message: err.errors})
+        } 
+        res.status(500).json({
+            message: "Server error" 
+        });
+    }
+})
 
 router.delete("/usuarios/:id", async (req, res) => {
     const id = Number(req.params.id);

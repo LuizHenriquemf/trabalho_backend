@@ -28,6 +28,15 @@ const salvarUsuario = (usuario) => {
     });
 };
 
+const alterarUsuario = (id, usuario) => {
+    return prisma.usuarios.update({
+        where: {
+            id: id
+        },
+        data: usuario
+    })
+};
+
 const deleteUsuario = (id) => {
     return prisma.usuarios.delete({
         where:{
@@ -40,5 +49,6 @@ module.exports = {
     salvarUsuario,
     emailPorUsuario,
     idPorUsuario,
+    alterarUsuario,
     deleteUsuario
 }

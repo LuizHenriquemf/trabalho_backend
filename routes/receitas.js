@@ -11,18 +11,42 @@ const receitaSchema = z.object({
 })
 
 router.get("/receitas", auth, async (req, res) => {
-    const receitas = await todasReceitas(req.usuario.idUsuario)
-    res.json({
-        receitas
-    });
+    try {
+        const receitas = await todasReceitas(req.usuario.idUsuario)
+        res.json({
+            receitas
+        });
+    } catch (err) {
+        if(err instanceof z.ZodError){
+            return res.status(422).json({
+                message: err.errors})
+        } 
+        res.status(500).json({
+            message: "Server error" 
+        });
+    }
+    
+    
 });
 
 router.get("/receitas/:id", auth, async (req, res) => {
-    const id = Number(req.params.id);
-    const receita = await receitaId(id);
-    res.json({
-        receita
-    })
+    try {
+        const id = Number(req.params.id);
+        const receita = await receitaId(id);
+        res.json({
+            receita
+        })
+    } catch (err) {
+        if(err instanceof z.ZodError){
+            return res.status(422).json({
+                message: err.errors})
+        } 
+        res.status(500).json({
+            message: "Server error" 
+        });
+    }
+
+    
 })
 
 router.post("/receitas", auth, async (req, res) => {
@@ -45,18 +69,42 @@ router.post("/receitas", auth, async (req, res) => {
 });
 
 router.put("/receitas/:id", auth, async (req, res) => {
-    const id = Number(req.params.id);
-    const receita = receitaSchema.parse(req.body);
-    const atualizarReceita = await alterarReceita(id, receita);
-    res.json({
-        receita: atualizarReceita
-    })
+    try {
+        const id = Number(req.params.id);
+        const receita = receitaSchema.parse(req.body);
+        const atualizarReceita = await alterarReceita(id, receita);
+        res.json({
+            receita: atualizarReceita
+        });
+    } catch (err) {
+        if(err instanceof z.ZodError){
+            return res.status(422).json({
+                message: err.errors})
+        } 
+        res.status(500).json({
+            message: "Server error" 
+        });
+    }
+    
+    
 });
 
 router.delete("/receitas/:id", auth, async (req, res) => {
-    const id = Number(req.params.id);
-    await deletarReceita(id);
-    res.status(204).send();
+    try {
+        const id = Number(req.params.id);
+        await deletarReceita(id);
+        res.status(204).send();
+    } catch (err) {
+        if(err instanceof z.ZodError){
+            return res.status(422).json({
+                message: err.errors})
+        } 
+        res.status(500).json({
+            message: "Server error" 
+        });
+    }
+    
+    
 });
 
 module.exports = {
